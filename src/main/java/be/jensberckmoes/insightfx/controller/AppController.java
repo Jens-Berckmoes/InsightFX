@@ -1,9 +1,9 @@
-package be.jensberckmoes.insightfx;
+package be.jensberckmoes.insightfx.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
-public class HelloController {
+public class AppController {
     @FXML
     private Label welcomeText;
 
