@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @ToString
 public class DataRecord {
-    @CsvCustomBindByName(column = "Omschrijving", converter = RequiredValueConverter.class)
+    @CsvCustomBindByName(column = "Omschrijving", converter = RequiredTrimmedStringConverter.class)
     private String description;
 
     @CsvCustomBindByName(column = "Valuta", converter = LocalDateConverter.class)
