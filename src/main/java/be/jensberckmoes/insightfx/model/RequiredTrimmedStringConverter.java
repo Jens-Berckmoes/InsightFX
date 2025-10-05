@@ -5,6 +5,10 @@ import com.opencsv.bean.AbstractBeanField;
 
 import java.util.Objects;
 
+/**
+ * Converter for String fields that are required in CSV.
+ * throws CsvParsingException when invalid or empty values received.
+ */
 public class RequiredTrimmedStringConverter extends AbstractBeanField<String, String> {
     @Override
     protected Object convert(final String value) {
