@@ -8,8 +8,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CsvParserServiceTest {
 
@@ -35,5 +34,59 @@ public class CsvParserServiceTest {
         assertEquals(new BigDecimal("-11.6"), first.getAmount());
         assertEquals("Terugstorten", first.getComments());
 
+    }
+
+/*shouldThrowExceptionForMalformedCsv()	Kapotte kolom	CsvParseException
+shouldHandleCommaAndDotInAmounts()	Locale bedragnotatie	Bedragen correct geconverteerd
+shouldTrimWhitespaceInStrings()	Spaties rond tekst	Strings opgeschoond*/
+
+    @Test
+    public void shouldReturnEmptyListForEmptyFile() {
+        final InputStream csvStream = getClass().getResourceAsStream("/empty-test-data.csv");
+        assertNotNull(csvStream, "Test CSV moet bestaan");
+
+        final List<DataRecord> records = parser.parse(csvStream);
+
+        assertEquals(0, records.size());
+    }
+
+    @Test
+    public void shouldThrowRunTimeExceptionForMalformedDateCsv() {
+        final InputStream csvStream = getClass().getResourceAsStream("/malformed-date-test-data.csv");
+        assertNotNull(csvStream, "Test CSV moet bestaan");
+
+        assertThrows(RuntimeException.class, () -> parser.parse(csvStream));
+    }
+
+    @Test
+    public void shouldThrowRunTimeExceptionForMalformedAmountCsv() {
+        final InputStream csvStream = getClass().getResourceAsStream("/malformed-amount-test-data.csv");
+        assertNotNull(csvStream, "Test CSV moet bestaan");
+
+        assertThrows(RuntimeException.class, () -> parser.parse(csvStream));
+    }
+
+    @Test
+    public void shouldThrowRunTimeExceptionForNullAmountCsv() {
+        final InputStream csvStream = getClass().getResourceAsStream("/malformed-null-amount-test-data.csv");
+        assertNotNull(csvStream, "Test CSV moet bestaan");
+
+        assertThrows(RuntimeException.class, () -> parser.parse(csvStream));
+    }
+
+    @Test
+    public void shouldThrowRunTimeExceptionForEmptyDescriptionCsv() {
+        final InputStream csvStream = getClass().getResourceAsStream("/malformed-empty-description-test-data.csv");
+        assertNotNull(csvStream, "Test CSV moet bestaan");
+
+        assertThrows(RuntimeException.class, () -> parser.parse(csvStream));
+    }
+
+    @Test
+    public void shouldThrowRunTimeExceptionForTooFewHeadersColumnsCsv() {
+        final InputStream csvStream = getClass().getResourceAsStream("/malformed-headers-test-data.csv");
+        assertNotNull(csvStream, "Test CSV moet bestaan");
+
+        assertThrows(RuntimeException.class, () -> parser.parse(csvStream));
     }
 }
