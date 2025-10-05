@@ -5,7 +5,7 @@ public class CsvParsingException extends RuntimeException{
         super(cause);
     }
 
-    public CsvParsingException(String message) {
+    public CsvParsingException(final String message) {
         super(message);
     }
 }

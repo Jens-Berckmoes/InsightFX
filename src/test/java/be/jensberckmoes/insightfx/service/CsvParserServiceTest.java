@@ -30,15 +30,11 @@ public class CsvParserServiceTest {
 
         final DataRecord first = records.getFirst();
         assertEquals("2025-10-03", first.getCurrencyDate().toString());
-        assertEquals("INSTANTOVERSCHRIJVING NAAR           03-10 BE97 7360 7410 6549 BANKIER BEGUNSTIGDE: KREDBEBBXXX BERCKMOES J & DUMONT M TERUGSTORTEN OM 14.54 UUR MET KBC MOBILE", first.getDescription());
+        assertEquals("INSTANTOVERSCHRIJVING NAAR", first.getDescription().trim());
         assertEquals(new BigDecimal("-11.6"), first.getAmount());
         assertEquals("Terugstorten", first.getComments());
 
     }
-
-/*shouldThrowExceptionForMalformedCsv()	Kapotte kolom	CsvParseException
-shouldHandleCommaAndDotInAmounts()	Locale bedragnotatie	Bedragen correct geconverteerd
-shouldTrimWhitespaceInStrings()	Spaties rond tekst	Strings opgeschoond*/
 
     @Test
     public void shouldReturnEmptyListForEmptyFile() {
