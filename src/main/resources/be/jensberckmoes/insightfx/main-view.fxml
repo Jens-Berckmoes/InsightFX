@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="be.jensberckmoes.insightfx.controller.MainController">
+
+    <top>
+        <HBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Button text="📂 Load CSV" fx:id="loadButton" onAction="#onLoadCsv"/>
+            <Button text="📊 Analyseer" fx:id="analyzeButton" onAction="#onAnalyze" disable="true"/>
+            <Button text="📈 Genereer grafiek" fx:id="chartButton" onAction="#onChart" disable="true"/>
+            <Button text="💾 Export" fx:id="exportButton" onAction="#onExport" disable="true"/>
+            <Label fx:id="statusLabel" style="-fx-padding: 5 0 0 20;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane fx:id="tabPane">
+            <Tab text="Data" closable="false">
+                <TableView fx:id="tableView">
+                    <columns>
+                        <TableColumn text="Date" fx:id="dateColumn" prefWidth="120"/>
+                        <TableColumn text="Description" fx:id="descriptionColumn" prefWidth="300"/>
+                        <TableColumn text="Amount" fx:id="amountColumn" prefWidth="100"/>
+                        <TableColumn text="Free Text Field" fx:id="commentsColumn" prefWidth="300"/>
+                    </columns>
+                </TableView>
+            </Tab>
+            <Tab text="Analyse" fx:id="analysisTab" closable="false" disable="true">
+                <TableView fx:id="analysisTable">
+                    <columns>
+                        <TableColumn text="Category" fx:id="categoryColumn"/>
+                        <TableColumn text="Amount" fx:id="countColumn"/>
+                        <TableColumn text="Total (€)" fx:id="totalColumn"/>
+                    </columns>
+                </TableView>
+            </Tab>
+        </TabPane>
+    </center>
+</BorderPane>
