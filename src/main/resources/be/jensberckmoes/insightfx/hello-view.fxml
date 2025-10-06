@@ -1,16 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="be.jensberckmoes.insightfx.controller.MainController">
 
-<?import javafx.scene.control.Button?>
-<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="be.jensberckmoes.insightfx.controller.AppController">
-  <padding>
-    <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
-  </padding>
+  <!-- Bovenbalk met knoppen -->
+  <top>
+    <HBox spacing="10">
+      <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+      </padding>
+      <Button text="📂 Load CSV" fx:id="loadButton" onAction="#onLoadCsv"/>
+      <Button text="📊 Analyseer" fx:id="analyzeButton" onAction="#onAnalyze" disable="true"/>
+      <Button text="📈 Genereer grafiek" fx:id="chartButton" onAction="#onChart" disable="true"/>
+      <Button text="💾 Export" fx:id="exportButton" onAction="#onExport" disable="true"/>
+      <Label fx:id="statusLabel" text="Klaar" style="-fx-padding: 5 0 0 20;"/>
+    </HBox>
+  </top>
 
-  <Label fx:id="welcomeText"/>
-  <Button text="Hello!" onAction="#onHelloButtonClick"/>
-</VBox>
+  <!-- Middelste deel met de tabel -->
+  <center>
+    <TableView fx:id="tableView">
+      <columns>
+        <TableColumn text="Datum" fx:id="dateColumn" prefWidth="120"/>
+        <TableColumn text="Omschrijving" fx:id="descriptionColumn" prefWidth="300"/>
+        <TableColumn text="Bedrag" fx:id="amountColumn" prefWidth="100"/>
+        <TableColumn text="Vrije Mededeling" fx:id="commentsColumn" prefWidth="300"/>
+      </columns>
+    </TableView>
+  </center>
+</BorderPane>
