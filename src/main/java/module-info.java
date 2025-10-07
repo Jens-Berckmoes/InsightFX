@@ -16,4 +16,6 @@ module be.jensberckmoes.insightfx {
     exports be.jensberckmoes.insightfx.controller;
     exports be.jensberckmoes.insightfx.model;
     opens be.jensberckmoes.insightfx.converter to com.opencsv;
+    exports be.jensberckmoes.insightfx.service;
+    opens be.jensberckmoes.insightfx.service to com.opencsv;
 }
