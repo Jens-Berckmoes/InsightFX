@@ -16,7 +16,7 @@ public class AnalysisService {
     private final Map<String, List<String>> keywordMap = Map.ofEntries(
             entry("Groceries", List.of("AH", "Delhaize", "Lidl", "Colruyt", "Aldi","Carrefour","TOO GOOD TO GO")),
             entry("Subscriptions", List.of("Netflix", "Spotify", "YouTube", "Apple","Disney")),
-            entry("Health", List.of("Loes Koolen")),
+            entry("Health", List.of("Loes Koolen","Therapie","Therapy","Ricardo")),
             entry("Transport", List.of("NMBS", "Uber", "Shell", "Q8","Van raak","dats","Gabriels", "Lukoil")),
             entry("Takeout", List.of("McDonalds","Burger King","The Nile","Hasselt-food")),
             entry("Leasure time", List.of("Bol.com", "Coolblue", "Steam", "MediaMarkt")),
@@ -24,7 +24,7 @@ public class AnalysisService {
             entry("Clothing", List.of("Torfs")),
             entry("Services", List.of("DIENSTENCHEQUE")),
             entry("Household", List.of("Hasselt-store")),
-            entry("Income", List.of("Matt")),
+            entry("Income", List.of("Matt","Salaris","Uitkering","Salary")),
             entry("Pet", List.of("Invivo"))
     );
 
