@@ -1,46 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="be.jensberckmoes.insightfx.controller.MainController">
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="be.jensberckmoes.insightfx.controller.MainController">
 
     <top>
         <HBox spacing="10">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets bottom="10" left="10" right="10" top="10" />
             </padding>
-            <Button text="📂 Load CSV" fx:id="loadButton" onAction="#onLoadCsv"/>
-            <Button text="📊 Analyseer" fx:id="analyzeButton" onAction="#onAnalyze" disable="true"/>
-            <Button text="📈 Genereer grafiek" fx:id="chartButton" onAction="#onChart" disable="true"/>
-            <Button text="💾 Export" fx:id="exportButton" onAction="#onExport" disable="true"/>
-            <Label fx:id="statusLabel" style="-fx-padding: 5 0 0 20;"/>
+            <Button onAction="#onLoadCsv" text="📂 Load CSV" />
+            <Button fx:id="analyzeButton" disable="true" onAction="#onAnalyze" text="📊 Analyse Data" />
+            <Button fx:id="chartButton" disable="true" onAction="#onChart" text="📈 Generate chart" />
+            <Button fx:id="exportButton" disable="true" onAction="#onExport" text="💾 Export Data" />
+            <HBox prefHeight="0.0" prefWidth="85.0">
+                <RadioButton fx:id="csvRadioButton" mnemonicParsing="false" text="CSV"/>
+                <RadioButton fx:id="pdfRadioButton" mnemonicParsing="false" text="PDF"/>
+            </HBox>
+            <Label fx:id="statusLabel" style="-fx-padding: 5 0 0 20;" />
         </HBox>
     </top>
 
     <center>
         <TabPane fx:id="tabPane">
-            <Tab text="Data" closable="false">
+            <Tab fx:id="dataTab" closable="false" text="Data">
                 <TableView fx:id="tableView">
                     <columns>
-                        <TableColumn text="Date" fx:id="dateColumn" prefWidth="120"/>
-                        <TableColumn text="Description" fx:id="descriptionColumn" prefWidth="300"/>
-                        <TableColumn text="Amount" fx:id="amountColumn" prefWidth="100"/>
-                        <TableColumn text="Free Text Field" fx:id="commentsColumn" prefWidth="300"/>
+                        <TableColumn fx:id="dateColumn" prefWidth="120" text="Date" />
+                        <TableColumn fx:id="descriptionColumn" prefWidth="300" text="Description" />
+                        <TableColumn fx:id="amountColumn" prefWidth="100" text="Amount" />
+                        <TableColumn fx:id="commentsColumn" prefWidth="300" text="Free Text Field" />
                     </columns>
                 </TableView>
             </Tab>
-            <Tab text="Analyse" fx:id="analysisTab" closable="false" disable="true">
+            <Tab fx:id="analysisTab" closable="false" disable="true" text="Analyse">
                 <TableView fx:id="analysisTable">
                     <columns>
-                        <TableColumn text="Category" fx:id="categoryColumn"/>
-                        <TableColumn text="Amount" fx:id="countColumn"/>
-                        <TableColumn text="Total (€)" fx:id="totalColumn"/>
+                        <TableColumn fx:id="categoryColumn" text="Category" />
+                        <TableColumn fx:id="countColumn" text="Amount" />
+                        <TableColumn fx:id="totalColumn" text="Total (€)" />
                     </columns>
                 </TableView>
+            </Tab>
+            <Tab fx:id="chartTab" closable="false" disable="true" text="Chart">
+                <StackPane fx:id="chartPane" />
             </Tab>
         </TabPane>
     </center>
