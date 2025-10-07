@@ -2,8 +2,12 @@ package be.jensberckmoes.insightfx.controller;
 
 import be.jensberckmoes.insightfx.model.CategorySummary;
 import be.jensberckmoes.insightfx.model.DataRecord;
+import be.jensberckmoes.insightfx.model.ExportType;
+import be.jensberckmoes.insightfx.model.ExportableRow;
 import be.jensberckmoes.insightfx.service.AnalysisService;
 import be.jensberckmoes.insightfx.service.CsvParserService;
+import be.jensberckmoes.insightfx.service.ExportService;
+import be.jensberckmoes.insightfx.service.ExportServiceImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -12,16 +16,24 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class MainController {
+    private static final Logger log = LoggerFactory.getLogger(MainController.class);
+
+    @FXML
+    public ComboBox<ExportType> exportTypeComboBox;
     @FXML
     private TabPane tabPane;
     @FXML
@@ -54,13 +66,10 @@ public class MainController {
     private StackPane chartPane;
     @FXML
     private Button analyzeButton, chartButton, exportButton;
-    @FXML
-    public RadioButton csvRadioButton;
-    @FXML
-    public RadioButton pdfRadioButton;
 
     private final CsvParserService csvParserService = new CsvParserService();
     private final AnalysisService analysisService = new AnalysisService();
+    private final ExportService exportService = new ExportServiceImpl();
     private List<CategorySummary> results = new ArrayList<>();
     private List<DataRecord> records = new ArrayList<>();
 
@@ -87,9 +96,8 @@ public class MainController {
         totalColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(
                 cellData.getValue().getTotal()
         ));
-        final ToggleGroup group = new ToggleGroup();
-        csvRadioButton.setToggleGroup(group);
-        pdfRadioButton.setToggleGroup(group);
+        exportTypeComboBox.getItems().setAll(ExportType.values());
+        exportTypeComboBox.getSelectionModel().select(ExportType.CSV);
     }
 
     @FXML
@@ -150,7 +158,7 @@ public class MainController {
 
         final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
                 categoryResults.stream()
-                        .map(r -> new PieChart.Data(getNameWithPercent(r,totalAmount), r.getCount()))
+                        .map(r -> new PieChart.Data(getNameWithPercent(r, totalAmount), r.getCount()))
                         .toList()
         );
 
@@ -173,7 +181,49 @@ public class MainController {
 
     @FXML
     private void onExport() {
-        statusLabel.setText("Exporting... (to implement)");
+        if (results.isEmpty()) return;
+
+        final ExportType selectedType = exportTypeComboBox.getSelectionModel().getSelectedItem();
+        if (selectedType == null) return;
+
+        final File file = chooseExportFile(selectedType);
+        if (file == null){
+            log.info("Export cancelled by user for type {}", selectedType);
+            return;
+        }
+
+        exportResults(selectedType, file.toPath(), results);
+    }
+
+    private File chooseExportFile(final ExportType type) {
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Dialog");
+        fileChooser.setInitialFileName("InsightFX_export");
+
+        switch (type) {
+            case CSV,EUROPEAN_CSV -> fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("CSV file", "*.csv")
+            );
+            case PDF -> fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("PDF file", "*.pdf")
+            );
+        }
+
+        return fileChooser.showSaveDialog(null);
+    }
+
+    private void exportResults(final ExportType type, final Path path, final List<? extends ExportableRow> rows) {
+        log.info("Starting export: type={}, target={}", type, path.toAbsolutePath());
+        try {
+            exportService.export(rows, path, type);
+            log.info("Export completed successfully: {}", path.toAbsolutePath());
+            statusLabel.setText("Export completed: " + path.toAbsolutePath());
+            statusLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+        } catch (final IOException e) {
+            log.error("Export failed: {}", e.getMessage(), e);
+            statusLabel.setText("Export failed: " + e.getMessage());
+            statusLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+        }
     }
 
     private void resetForNewCSV() {
@@ -193,7 +243,7 @@ public class MainController {
         tabPane.getSelectionModel().select(dataTab);
     }
 
-    private String getNameWithPercent(final CategorySummary categorySummary, final double totalAmount){
+    private String getNameWithPercent(final CategorySummary categorySummary, final double totalAmount) {
         final double percent = categorySummary.getCount() / totalAmount * 100;
         return categorySummary.getCategory() + " (" + String.format("%.1f", percent) + "%)";
     }

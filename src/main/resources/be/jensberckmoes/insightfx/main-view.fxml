@@ -15,9 +15,8 @@
             <Button fx:id="analyzeButton" disable="true" onAction="#onAnalyze" text="📊 Analyse Data" />
             <Button fx:id="chartButton" disable="true" onAction="#onChart" text="📈 Generate chart" />
             <Button fx:id="exportButton" disable="true" onAction="#onExport" text="💾 Export Data" />
-            <HBox prefHeight="0.0" prefWidth="85.0">
-                <RadioButton fx:id="csvRadioButton" mnemonicParsing="false" text="CSV"/>
-                <RadioButton fx:id="pdfRadioButton" mnemonicParsing="false" text="PDF"/>
+            <HBox prefHeight="0.0" prefWidth="150.0">
+                <ComboBox fx:id="exportTypeComboBox" prefWidth="150.0"/>
             </HBox>
             <Label fx:id="statusLabel" style="-fx-padding: 5 0 0 20;" />
         </HBox>
