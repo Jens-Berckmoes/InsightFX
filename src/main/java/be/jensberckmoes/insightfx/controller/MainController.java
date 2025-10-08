@@ -1,29 +1,32 @@
 package be.jensberckmoes.insightfx.controller;
 
-import be.jensberckmoes.insightfx.model.CategorySummary;
-import be.jensberckmoes.insightfx.model.DataRecord;
-import be.jensberckmoes.insightfx.model.ExportType;
-import be.jensberckmoes.insightfx.model.ExportableRow;
+import be.jensberckmoes.insightfx.model.*;
 import be.jensberckmoes.insightfx.service.AnalysisService;
 import be.jensberckmoes.insightfx.service.CsvParserService;
 import be.jensberckmoes.insightfx.service.ExportService;
 import be.jensberckmoes.insightfx.service.ExportServiceImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.Side;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +75,7 @@ public class MainController {
     private final ExportService exportService = new ExportServiceImpl();
     private List<CategorySummary> results = new ArrayList<>();
     private List<DataRecord> records = new ArrayList<>();
+    private AnalysisResult analysisResult;
 
     @FXML
     public void initialize() {
@@ -175,6 +179,17 @@ public class MainController {
         final boolean hasData = !categoryResults.isEmpty();
         exportButton.setDisable(!hasData);
 
+        final WritableImage fxImage = chart.snapshot(new SnapshotParameters(), null);
+        final BufferedImage buffered = SwingFXUtils.fromFXImage(fxImage, null);
+        File tmp;
+        try {
+            tmp = File.createTempFile("insightfx_chart_", ".png", new File(System.getProperty("java.io.tmpdir")));
+            ImageIO.write(buffered, "png", tmp);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+        tmp.deleteOnExit();
+        analysisResult = new AnalysisResult(results, tmp.toPath());
         statusLabel.setText("Chart generated: " + results.size() + " categories");
 
     }
@@ -182,17 +197,19 @@ public class MainController {
     @FXML
     private void onExport() {
         if (results.isEmpty()) return;
+        if (analysisResult == null) return;
 
         final ExportType selectedType = exportTypeComboBox.getSelectionModel().getSelectedItem();
         if (selectedType == null) return;
 
         final File file = chooseExportFile(selectedType);
-        if (file == null){
+        if (Objects.isNull(file)) {
             log.info("Export cancelled by user for type {}", selectedType);
             return;
         }
 
         exportResults(selectedType, file.toPath(), results);
+
     }
 
     private File chooseExportFile(final ExportType type) {
@@ -201,7 +218,7 @@ public class MainController {
         fileChooser.setInitialFileName("InsightFX_export");
 
         switch (type) {
-            case CSV,EUROPEAN_CSV -> fileChooser.getExtensionFilters().add(
+            case CSV, EUROPEAN_CSV -> fileChooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("CSV file", "*.csv")
             );
             case PDF -> fileChooser.getExtensionFilters().add(
@@ -215,10 +232,20 @@ public class MainController {
     private void exportResults(final ExportType type, final Path path, final List<? extends ExportableRow> rows) {
         log.info("Starting export: type={}, target={}", type, path.toAbsolutePath());
         try {
-            exportService.export(rows, path, type);
+            final Path imagePath = analysisResult.getChartTempPath().orElse(null);
+            exportService.export(rows, path, type, imagePath);
             log.info("Export completed successfully: {}", path.toAbsolutePath());
             statusLabel.setText("Export completed: " + path.toAbsolutePath());
             statusLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+            analysisResult.getChartTempPath().ifPresent(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                    log.debug("Deleting of image succeeded");
+                } catch (Exception e) {
+                    log.error("Deleting of image failed: {}", e.getMessage(), e);
+                    throw new RuntimeException(e);
+                }
+            });
         } catch (final IOException e) {
             log.error("Export failed: {}", e.getMessage(), e);
             statusLabel.setText("Export failed: " + e.getMessage());

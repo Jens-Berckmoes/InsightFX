@@ -6,6 +6,10 @@ module be.jensberckmoes.insightfx {
     requires java.logging;
     requires org.slf4j;
     requires java.sql;
+    requires org.apache.pdfbox;
+    requires org.apache.fontbox;
+    requires java.desktop;
+    requires javafx.swing;
 
     opens be.jensberckmoes.insightfx to javafx.fxml;
     opens be.jensberckmoes.insightfx.controller to javafx.fxml;

@@ -11,4 +11,10 @@ public interface ExportService {
     void export(final List<? extends ExportableRow> rows,
                 final Path targetFile,
                 final ExportType exportType) throws IOException;
+
+    void export(final List<? extends ExportableRow> rows,
+                final Path target,
+                final ExportType type,
+                final Path chartImagePath) throws IOException;
+
 }

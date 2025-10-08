@@ -14,9 +14,9 @@ public class AnalysisService {
     private static final Logger log = LoggerFactory.getLogger(CsvParserService.class);
 
     private final Map<String, List<String>> keywordMap = Map.ofEntries(
-            entry("Groceries", List.of("AH", "Delhaize", "Lidl", "Colruyt", "Aldi","Carrefour","TOO GOOD TO GO")),
+            entry("Groceries", List.of("AH", "Delhaize", "Lidl", "Colruyt", "Aldi","Carrefour","TOO GOOD TO")),
             entry("Subscriptions", List.of("Netflix", "Spotify", "YouTube", "Apple","Disney")),
-            entry("Health", List.of("Loes Koolen","Therapie","Therapy","Ricardo")),
+            entry("Health", List.of("Loes Koolen","Therapie","Therapy","Ricardo","A-cura")),
             entry("Transport", List.of("NMBS", "Uber", "Shell", "Q8","Van raak","dats","Gabriels", "Lukoil")),
             entry("Takeout", List.of("McDonalds","Burger King","The Nile","Hasselt-food")),
             entry("Leasure time", List.of("Bol.com", "Coolblue", "Steam", "MediaMarkt")),
@@ -25,7 +25,9 @@ public class AnalysisService {
             entry("Services", List.of("DIENSTENCHEQUE")),
             entry("Household", List.of("Hasselt-store")),
             entry("Income", List.of("Matt","Salaris","Uitkering","Salary")),
-            entry("Pet", List.of("Invivo"))
+            entry("Pet", List.of("Invivo")),
+            entry("Insurance", List.of("Kliniplan","AXA","Dela")),
+            entry("Charitable contribution", List.of("Rode kruis"))
     );
 
     public List<CategorySummary> analyse(final List<DataRecord> records) {
@@ -49,9 +51,12 @@ public class AnalysisService {
                 totalExpenses = totalExpenses.add(amount);
             }
         }
-
-        categoryMap.put("Total Income", new CategorySummary("Total Income", totalIncome));
-        categoryMap.put("Total Expenses", new CategorySummary("Total Expenses", totalExpenses));
+        if(totalIncome.compareTo(BigDecimal.ZERO) > 0){
+            categoryMap.put("Total Income", new CategorySummary("Total Income", totalIncome));
+        }
+        if(totalExpenses.compareTo(BigDecimal.ZERO) <= 0){
+            categoryMap.put("Total Expenses", new CategorySummary("Total Expenses", totalExpenses));
+        }
         categoryMap.put("Balance", new CategorySummary("Balance", totalIncome.add(totalExpenses)));
 
         return new ArrayList<>(categoryMap.values());
