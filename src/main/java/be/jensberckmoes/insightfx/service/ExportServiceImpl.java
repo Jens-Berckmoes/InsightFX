@@ -25,11 +25,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of {@link ExportService} providing CSV, European CSV, and PDF export capabilities.
+ */
+
 public class ExportServiceImpl implements ExportService {
     private static final Logger log = LoggerFactory.getLogger(ExportServiceImpl.class);
     private static final PDFont FONT_REGULAR = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
     private static final PDFont FONT_BOLD = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void export(final List<? extends ExportableRow> rows,
                        final Path targetFile,
@@ -37,6 +44,9 @@ public class ExportServiceImpl implements ExportService {
         export(rows, targetFile, exportType, null);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void export(final List<? extends ExportableRow> rows,
                        final Path targetFile,
@@ -66,10 +76,23 @@ public class ExportServiceImpl implements ExportService {
 
     }
 
+    /**
+     * Returns the standard headers for CSV export.
+     *
+     * @return list of CSV column names
+     */
     private static List<String> getCsvHeaders() {
         return List.of("Category", "Amount");
     }
 
+    /**
+     * Writes the list of rows to a CSV file using the given delimiter.
+     *
+     * @param rows       the data to export
+     * @param targetFile the target CSV file path
+     * @param delimiter  the CSV delimiter to use
+     * @throws IOException if writing to file fails
+     */
     private void exportCsv(final List<? extends ExportableRow> rows, final Path targetFile, final CsvDelimiter delimiter) throws IOException {
         final long start = System.currentTimeMillis();
         if (rows.isEmpty()) {
@@ -95,12 +118,25 @@ public class ExportServiceImpl implements ExportService {
         log.info("Exported {} rows to {} in {} ms for CSV", rows.size(), targetFile, System.currentTimeMillis() - start);
     }
 
+    /**
+     * Returns a function that maps a row's key-value pairs to a CSV line string.
+     *
+     * @param delimiter the CSV delimiter
+     * @param headers   the CSV headers
+     * @return function mapping a row map to CSV line
+     */
     private static Function<Map<String, Object>, String> mapRowToCsvLine(final CsvDelimiter delimiter, final List<String> headers) {
         return rowMap -> headers.stream()
                 .map(h -> Objects.toString(rowMap.get(h), ""))
                 .collect(Collectors.joining(delimiter.getSymbol()));
     }
 
+    /**
+     * Returns a consumer that writes a CSV line to the provided BufferedWriter.
+     *
+     * @param writer BufferedWriter to write lines to
+     * @return consumer that writes each line
+     */
     private static Consumer<String> writeCsvLine(final BufferedWriter writer) {
         return line -> {
             try {
@@ -112,6 +148,13 @@ public class ExportServiceImpl implements ExportService {
         };
     }
 
+    /**
+     * Writes the given rows to a PDF document, optionally including a chart image.
+     *
+     * @param rows           data to write
+     * @param targetFile     target PDF file path
+     * @param chartImagePath optional chart image path
+     */
     private void exportPdf(final List<? extends ExportableRow> rows, final Path targetFile, final Path chartImagePath) {
         final long start = System.currentTimeMillis();
         if (rows.isEmpty()) {
@@ -142,6 +185,14 @@ public class ExportServiceImpl implements ExportService {
         }
     }
 
+    /**
+     * Writes the PDF title and returns the new Y position after spacing.
+     *
+     * @param contentStream the content stream of the PDF
+     * @param yPos          current vertical position
+     * @return new Y position after title
+     * @throws IOException if writing to PDF fails
+     */
     private static float writeTitleWithSpaceBelow(final PDPageContentStream contentStream,
                                                   final float yPos) throws IOException {
         contentStream.beginText();
@@ -149,9 +200,19 @@ public class ExportServiceImpl implements ExportService {
         contentStream.newLineAtOffset(50, yPos);
         contentStream.showText("InsightFX Export Summary");
         contentStream.endText();
-        return moveDown(yPos,50);
+        return moveDown(yPos, 50);
     }
 
+    /**
+     * Draws a chart image on the PDF if the path exists.
+     *
+     * @param document       the PDF document
+     * @param contentStream  the content stream
+     * @param chartImagePath path to chart image
+     * @param yPos           current vertical position
+     * @return new Y position after drawing chart
+     * @throws IOException if drawing fails
+     */
     private static float drawChartIfExists(final PDDocument document,
                                            final PDPageContentStream contentStream,
                                            final Path chartImagePath,
@@ -163,15 +224,29 @@ public class ExportServiceImpl implements ExportService {
             final float width = chart.getWidth() * scale;
             final float height = chart.getHeight() * scale;
             contentStream.drawImage(chart, 50, yPos - height, width, height);
-            return moveDown(yPos, height+30);
+            return moveDown(yPos, height + 30);
         }
         return yPos;
     }
 
+    /**
+     * Checks if a file exists at the given path.
+     *
+     * @param chartImagePath the path to check
+     * @return true if path exists, false otherwise
+     */
     private static boolean fileExists(final Path chartImagePath) {
         return Objects.nonNull(chartImagePath) && Files.exists(chartImagePath);
     }
 
+    /**
+     * Writes each row's data to the PDF content stream.
+     *
+     * @param rows        the data rows
+     * @param contentStream the PDF content stream
+     * @param startY      starting Y position
+     * @throws IOException if writing fails
+     */
     private static void writeRows(final List<? extends ExportableRow> rows,
                                   final PDPageContentStream contentStream,
                                   final float startY) throws IOException {
@@ -198,10 +273,17 @@ public class ExportServiceImpl implements ExportService {
             contentStream.showText(amount);
             contentStream.endText();
 
-            y = moveDown(y,20);
+            y = moveDown(y, 20);
         }
     }
 
+    /**
+     * Moves down the Y-coordinate by the given amount.
+     *
+     * @param y      current Y position
+     * @param amount amount to move down
+     * @return new Y position
+     */
     private static float moveDown(float y, float amount) {
         return y - amount;
     }

@@ -73,35 +73,51 @@ public class MainController {
     private final CsvParserService csvParserService = new CsvParserService();
     private final AnalysisService analysisService = new AnalysisService();
     private final ExportService exportService = new ExportServiceImpl();
-    private List<CategorySummary> results = new ArrayList<>();
-    private List<DataRecord> records = new ArrayList<>();
+
+    private final List<CategorySummary> results = new ArrayList<>();
+    private final List<DataRecord> records = new ArrayList<>();
     private AnalysisResult analysisResult;
 
     @FXML
     public void initialize() {
-        dateColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().getCurrencyDate().toString()
-        ));
-        descriptionColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().getDescription()
-        ));
-        amountColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(
-                cellData.getValue().getAmount()
-        ));
-        commentsColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().getComments()
-        ));
-        categoryColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().getCategory()
-        ));
-        countColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(
-                cellData.getValue().getCount()
-        ));
-        totalColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(
-                cellData.getValue().getTotal()
-        ));
-        exportTypeComboBox.getItems().setAll(ExportType.values());
-        exportTypeComboBox.getSelectionModel().select(ExportType.CSV);
+        setupTableColumns();
+        rightAlignColumn(amountColumn);
+        rightAlignColumn(totalColumn);
+        exportTypeComboBox.setDisable(true);
+    }
+
+    /**
+     * Configures the TableView columns to display the correct properties of DataRecord and CategorySummary.
+     */
+    private void setupTableColumns() {
+        dateColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getCurrencyDate().toString()));
+        descriptionColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getDescription()));
+        amountColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleObjectProperty<>(cell.getValue().getAmount()));
+        commentsColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getComments()));
+        categoryColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getCategory()));
+        countColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleObjectProperty<>(cell.getValue().getCount()));
+        totalColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleObjectProperty<>(cell.getValue().getTotal()));
+    }
+
+    /**
+     * Aligns the given TableColumn of BigDecimal values to the right.
+     *
+     * @param column the column to align
+     * @param <S>    the type of the TableView items
+     */
+    private <S> void rightAlignColumn(final TableColumn<S, BigDecimal> column) {
+        column.setCellFactory(_ -> new TableCell<>() {
+            @Override
+            protected void updateItem(final BigDecimal item, final boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.toString());
+                    setStyle("-fx-alignment: CENTER-RIGHT;");
+                }
+            }
+        });
     }
 
     @FXML
@@ -115,13 +131,14 @@ public class MainController {
         if (Objects.isNull(file)) return;
 
         try (final InputStream stream = new FileInputStream(file)) {
-            records = csvParserService.parse(stream);
+            records.clear();
+            records.addAll(csvParserService.parse(stream));
             tableView.setItems(FXCollections.observableArrayList(records));
-
-            final boolean hasData = !records.isEmpty();
-            analyzeButton.setDisable(!hasData);
+            analyzeButton.setDisable(records.isEmpty());
+            log.info("CSV loaded successfully: {} records", records.size());
             statusLabel.setText("CSV loaded: " + records.size() + " records");
         } catch (final Exception e) {
+            log.error("Failed to load CSV: {}", e.getMessage(), e);
             new Alert(Alert.AlertType.ERROR, "Error loading CSV:\n" + e.getMessage(), ButtonType.OK).showAndWait();
             statusLabel.setText("Problem loading CSV: " + e.getMessage());
         }
@@ -129,20 +146,20 @@ public class MainController {
 
     @FXML
     private void onAnalyze() {
-        final List<DataRecord> records = tableView.getItems();
-        if (Objects.isNull(records) || records.isEmpty()) {
+        if (records.isEmpty()) {
             statusLabel.setText("No data to analyse");
             return;
         }
 
-        results = analysisService.analyse(records);
+        results.clear();
+        results.addAll(analysisService.analyse(records));
         analysisTable.setItems(FXCollections.observableArrayList(results));
 
         analysisTab.setDisable(false);
         tabPane.getSelectionModel().select(analysisTab);
-        final boolean hasData = !results.isEmpty();
-        chartButton.setDisable(!hasData);
+        chartButton.setDisable(results.isEmpty());
 
+        log.info("Analysis completed: {} categories", results.size());
         statusLabel.setText("Analysis completed: " + results.size() + " categories");
     }
 
@@ -150,18 +167,14 @@ public class MainController {
     private void onChart() {
         if (results.isEmpty()) return;
 
-        final List<CategorySummary> categoryResults = results.stream()
-                .filter(r -> !r.getCategory().equals("Total Income") &&
-                        !r.getCategory().equals("Total Expenses") &&
-                        !r.getCategory().equals("Balance"))
-                .toList();
+        final List<CategorySummary> chartData = filterChartCategories(results);
 
-        final double totalAmount = categoryResults.stream()
+        final double totalAmount = chartData.stream()
                 .mapToDouble(CategorySummary::getCount)
                 .sum();
 
         final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
-                categoryResults.stream()
+                chartData.stream()
                         .map(r -> new PieChart.Data(getNameWithPercent(r, totalAmount), r.getCount()))
                         .toList()
         );
@@ -172,35 +185,65 @@ public class MainController {
         chart.setLegendSide(Side.LEFT);
 
         chartPane.getChildren().clear();
-        chartPane.getChildren().add(chart);
-
+        chartPane.getChildren().setAll(chart);
         chartTab.setDisable(false);
         tabPane.getSelectionModel().select(chartTab);
-        final boolean hasData = !categoryResults.isEmpty();
-        exportButton.setDisable(!hasData);
+        exportButton.setDisable(chartData.isEmpty());
+        loadExportComboBox();
 
+        analysisResult = prepareChartTempFile(chart);
+        log.info("Chart generated with {} categories", chartData.size());
+        statusLabel.setText("Chart generated: " + results.size() + " categories");
+    }
+
+    /**
+     * Filters out summary categories (Income, Expenses, Balance) from chart data.
+     *
+     * @param categories list of CategorySummary objects
+     * @return filtered list suitable for chart display
+     */
+    private List<CategorySummary> filterChartCategories(final List<CategorySummary> categories) {
+        return categories.stream()
+                .filter(r -> !r.getCategory().equals("Total Income") &&
+                        !r.getCategory().equals("Total Expenses") &&
+                        !r.getCategory().equals("Balance"))
+                .toList();
+    }
+
+    /**
+     * Generates a temporary PNG image of the chart for export and returns it wrapped in an AnalysisResult.
+     *
+     * @param chart the JavaFX PieChart to snapshot
+     * @return AnalysisResult containing current results and chart image path
+     */
+    private AnalysisResult prepareChartTempFile(final PieChart chart) {
         final WritableImage fxImage = chart.snapshot(new SnapshotParameters(), null);
         final BufferedImage buffered = SwingFXUtils.fromFXImage(fxImage, null);
-        File tmp;
         try {
-            tmp = File.createTempFile("insightfx_chart_", ".png", new File(System.getProperty("java.io.tmpdir")));
+            final File tmp = File.createTempFile("insightfx_chart_", ".png", new File(System.getProperty("java.io.tmpdir")));
             ImageIO.write(buffered, "png", tmp);
+            return new AnalysisResult(results, tmp.toPath());
         } catch (final IOException e) {
+            log.error("Failed to create chart image: {}", e.getMessage(), e);
             throw new RuntimeException(e);
         }
-        tmp.deleteOnExit();
-        analysisResult = new AnalysisResult(results, tmp.toPath());
-        statusLabel.setText("Chart generated: " + results.size() + " categories");
+    }
 
+    /**
+     * Populates and enables the export type ComboBox with all available ExportType values.
+     */
+    private void loadExportComboBox() {
+        exportTypeComboBox.setDisable(false);
+        exportTypeComboBox.getItems().setAll(ExportType.values());
+        exportTypeComboBox.getSelectionModel().select(ExportType.CSV);
     }
 
     @FXML
     private void onExport() {
-        if (results.isEmpty()) return;
-        if (analysisResult == null) return;
+        if (results.isEmpty() || Objects.isNull(analysisResult)) return;
 
         final ExportType selectedType = exportTypeComboBox.getSelectionModel().getSelectedItem();
-        if (selectedType == null) return;
+        if (Objects.isNull(selectedType)) return;
 
         final File file = chooseExportFile(selectedType);
         if (Objects.isNull(file)) {
@@ -212,6 +255,12 @@ public class MainController {
 
     }
 
+    /**
+     * Opens a FileChooser for selecting the target file path for export.
+     *
+     * @param type the selected export type
+     * @return the chosen file or null if cancelled
+     */
     private File chooseExportFile(final ExportType type) {
         final FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Dialog");
@@ -229,6 +278,13 @@ public class MainController {
         return fileChooser.showSaveDialog(null);
     }
 
+    /**
+     * Handles the actual export process, including optional chart image deletion.
+     *
+     * @param type the export type
+     * @param path the target file path
+     * @param rows the data to export
+     */
     private void exportResults(final ExportType type, final Path path, final List<? extends ExportableRow> rows) {
         log.info("Starting export: type={}, target={}", type, path.toAbsolutePath());
         try {
@@ -253,10 +309,14 @@ public class MainController {
         }
     }
 
+    /**
+     * Resets UI state and clears data when a new CSV file is loaded.
+     */
     private void resetForNewCSV() {
         analyzeButton.setDisable(true);
         chartButton.setDisable(true);
         exportButton.setDisable(true);
+        exportTypeComboBox.setDisable(true);
 
         analysisTab.setDisable(true);
         chartTab.setDisable(true);
@@ -270,6 +330,13 @@ public class MainController {
         tabPane.getSelectionModel().select(dataTab);
     }
 
+    /**
+     * Returns the category name with percentage of total for chart display labels.
+     *
+     * @param categorySummary the category data
+     * @param totalAmount     total sum of all chart categories
+     * @return string like "Groceries (25.0%)"
+     */
     private String getNameWithPercent(final CategorySummary categorySummary, final double totalAmount) {
         final double percent = categorySummary.getCount() / totalAmount * 100;
         return categorySummary.getCategory() + " (" + String.format("%.1f", percent) + "%)";
