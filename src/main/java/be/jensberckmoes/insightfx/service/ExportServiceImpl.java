@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 
 public class ExportServiceImpl implements ExportService {
     private static final Logger log = LoggerFactory.getLogger(ExportServiceImpl.class);
+    private static final PDFont FONT_REGULAR = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+    private static final PDFont FONT_BOLD = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
     @Override
     public void export(final List<? extends ExportableRow> rows,
@@ -69,6 +71,7 @@ public class ExportServiceImpl implements ExportService {
     }
 
     private void exportCsv(final List<? extends ExportableRow> rows, final Path targetFile, final CsvDelimiter delimiter) throws IOException {
+        final long start = System.currentTimeMillis();
         if (rows.isEmpty()) {
             log.warn("CSV export called with empty row list: {}", targetFile);
             return;
@@ -85,13 +88,14 @@ public class ExportServiceImpl implements ExportService {
 
             rows.stream()
                     .map(ExportableRow::toRow)
-                    .map(rowToCsvLine(delimiter, headers))
+                    .map(mapRowToCsvLine(delimiter, headers))
                     .forEach(writeCsvLine(writer));
         }
         log.info("CSV export finished: {}", targetFile);
+        log.info("Exported {} rows to {} in {} ms for CSV", rows.size(), targetFile, System.currentTimeMillis() - start);
     }
 
-    private static Function<Map<String, Object>, String> rowToCsvLine(final CsvDelimiter delimiter, final List<String> headers) {
+    private static Function<Map<String, Object>, String> mapRowToCsvLine(final CsvDelimiter delimiter, final List<String> headers) {
         return rowMap -> headers.stream()
                 .map(h -> Objects.toString(rowMap.get(h), ""))
                 .collect(Collectors.joining(delimiter.getSymbol()));
@@ -109,6 +113,7 @@ public class ExportServiceImpl implements ExportService {
     }
 
     private void exportPdf(final List<? extends ExportableRow> rows, final Path targetFile, final Path chartImagePath) {
+        final long start = System.currentTimeMillis();
         if (rows.isEmpty()) {
             log.warn("PDF export called with empty row list: {}", targetFile);
             return;
@@ -120,18 +125,17 @@ public class ExportServiceImpl implements ExportService {
             document.addPage(page);
 
             try (final PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                final PDFont regularFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-                final PDFont boldFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
                 float yPos = 750;
-                yPos = writeTitleWithSpaceBelow(contentStream, boldFont, yPos);
+                yPos = writeTitleWithSpaceBelow(contentStream, yPos);
                 yPos = drawChartIfExists(document, contentStream, chartImagePath, yPos);
 
-                writeRows(rows, contentStream, regularFont, yPos);
+                writeRows(rows, contentStream, yPos);
             }
 
             document.save(targetFile.toFile());
             log.info("PDF export finished: {}", targetFile);
+            log.info("Exported {} rows to {} in {} ms for PDF", rows.size(), targetFile, System.currentTimeMillis() - start);
         } catch (final IOException e) {
             log.error("Error exporting PDF to {}: {}", targetFile, e.getMessage(), e);
             throw new RuntimeException("Error exporting PDF", e);
@@ -139,46 +143,44 @@ public class ExportServiceImpl implements ExportService {
     }
 
     private static float writeTitleWithSpaceBelow(final PDPageContentStream contentStream,
-                                                  final PDFont font,
                                                   final float yPos) throws IOException {
         contentStream.beginText();
-        contentStream.setFont(font, 18);
+        contentStream.setFont(ExportServiceImpl.FONT_BOLD, 18);
         contentStream.newLineAtOffset(50, yPos);
         contentStream.showText("InsightFX Export Summary");
         contentStream.endText();
-        return yPos - 50;
+        return moveDown(yPos,50);
     }
 
     private static float drawChartIfExists(final PDDocument document,
                                            final PDPageContentStream contentStream,
                                            final Path chartImagePath,
                                            final float yPos) throws IOException {
-        if (isAnExistingFile(chartImagePath)) {
+        if (fileExists(chartImagePath)) {
             log.debug("Including chart in PDF: {}", chartImagePath);
             final PDImageXObject chart = PDImageXObject.createFromFile(chartImagePath.toString(), document);
             final float scale = 0.4f;
             final float width = chart.getWidth() * scale;
             final float height = chart.getHeight() * scale;
             contentStream.drawImage(chart, 50, yPos - height, width, height);
-            return yPos - height - 30;
+            return moveDown(yPos, height+30);
         }
         return yPos;
     }
 
-    private static boolean isAnExistingFile(final Path chartImagePath) {
+    private static boolean fileExists(final Path chartImagePath) {
         return Objects.nonNull(chartImagePath) && Files.exists(chartImagePath);
     }
 
     private static void writeRows(final List<? extends ExportableRow> rows,
                                   final PDPageContentStream contentStream,
-                                  final PDFont font,
                                   final float startY) throws IOException {
         float xCategory = 50;
         float xAmount = 200;
         float fontSize = 12;
         float y = startY;
 
-        contentStream.setFont(font, fontSize);
+        contentStream.setFont(ExportServiceImpl.FONT_REGULAR, fontSize);
 
         for (final ExportableRow row : rows) {
             final Map<String, Object> data = row.toRow();
@@ -190,14 +192,18 @@ public class ExportServiceImpl implements ExportService {
             contentStream.showText(category);
             contentStream.endText();
 
-            float textWidthForAligningRight = font.getStringWidth(amount) / 1000 * fontSize;
+            float textWidthForAligningRight = ExportServiceImpl.FONT_REGULAR.getStringWidth(amount) / 1000 * fontSize;
             contentStream.beginText();
             contentStream.newLineAtOffset(xAmount - textWidthForAligningRight, y);
             contentStream.showText(amount);
             contentStream.endText();
 
-            y -= 20;
+            y = moveDown(y,20);
         }
+    }
+
+    private static float moveDown(float y, float amount) {
+        return y - amount;
     }
 
 }
