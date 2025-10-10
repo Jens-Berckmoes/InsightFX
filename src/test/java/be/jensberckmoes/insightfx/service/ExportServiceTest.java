@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -130,7 +131,8 @@ public class ExportServiceTest {
         final Path target = tempDir.resolve("report.pdf");
         final List<ExportableRow> rows = sampleRows();
 
-        exportService.export(rows, target, ExportType.PDF);
+        final BufferedImage chartImage = new BufferedImage(100, 50, BufferedImage.TYPE_INT_ARGB);
+        exportService.export(rows, target, ExportType.PDF, chartImage);
 
         assertThat(Files.exists(target)).isTrue();
         assertThat(Files.size(target)).isGreaterThan(0);
@@ -150,7 +152,7 @@ public class ExportServiceTest {
         final Path target = tempDir.resolve("report_no_chart.pdf");
         final List<ExportableRow> rows = sampleRows();
 
-        exportService.export(rows, target, ExportType.PDF, tempDir.resolve("non_existing.png"));
+        exportService.export(rows, target, ExportType.PDF, null);
 
         assertThat(Files.exists(target)).isTrue();
         assertThat(Files.size(target)).isGreaterThan(0);
@@ -168,8 +170,9 @@ public class ExportServiceTest {
     void testPdfInvalidPathThrows() {
         final Path invalidPath = Path.of("/this/path/does/not/exist/report.pdf");
         final List<ExportableRow> rows = sampleRows();
+        final BufferedImage chartImage = new BufferedImage(100, 50, BufferedImage.TYPE_INT_ARGB);
 
-        assertThatThrownBy(() -> exportService.export(rows, invalidPath, ExportType.PDF))
+        assertThatThrownBy(() -> exportService.export(rows, invalidPath, ExportType.PDF, chartImage))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Error exporting PDF");
     }
@@ -236,7 +239,8 @@ public class ExportServiceTest {
                 new DummyRow("", "999999999999999999")
         );
 
-        exportService.export(rows, target, ExportType.PDF);
+        final BufferedImage chartImage = new BufferedImage(100, 50, BufferedImage.TYPE_INT_ARGB);
+        exportService.export(rows, target, ExportType.PDF, chartImage);
 
         assertThat(Files.exists(target)).isTrue();
         assertThat(Files.size(target)).isGreaterThan(0);

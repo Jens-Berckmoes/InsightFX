@@ -19,14 +19,12 @@ import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -219,14 +217,7 @@ public class MainController {
     private AnalysisResult prepareChartTempFile(final PieChart chart) {
         final WritableImage fxImage = chart.snapshot(new SnapshotParameters(), null);
         final BufferedImage buffered = SwingFXUtils.fromFXImage(fxImage, null);
-        try {
-            final File tmp = File.createTempFile("insightfx_chart_", ".png", new File(System.getProperty("java.io.tmpdir")));
-            ImageIO.write(buffered, "png", tmp);
-            return new AnalysisResult(results, tmp.toPath());
-        } catch (final IOException e) {
-            log.error("Failed to create chart image: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return new AnalysisResult(results, buffered);
     }
 
     /**
@@ -288,20 +279,11 @@ public class MainController {
     private void exportResults(final ExportType type, final Path path, final List<? extends ExportableRow> rows) {
         log.info("Starting export: type={}, target={}", type, path.toAbsolutePath());
         try {
-            final Path imagePath = analysisResult.getChartTempPath().orElse(null);
-            exportService.export(rows, path, type, imagePath);
+            final BufferedImage image = analysisResult.getChartImage().orElse(null);
+            exportService.export(rows, path, type, image);
             log.info("Export completed successfully: {}", path.toAbsolutePath());
             statusLabel.setText("Export completed: " + path.toAbsolutePath());
             statusLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
-            analysisResult.getChartTempPath().ifPresent(p -> {
-                try {
-                    Files.deleteIfExists(p);
-                    log.debug("Deleting of image succeeded");
-                } catch (Exception e) {
-                    log.error("Deleting of image failed: {}", e.getMessage(), e);
-                    throw new RuntimeException(e);
-                }
-            });
         } catch (final IOException e) {
             log.error("Export failed: {}", e.getMessage(), e);
             statusLabel.setText("Export failed: " + e.getMessage());

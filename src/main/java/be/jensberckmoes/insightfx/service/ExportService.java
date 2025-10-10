@@ -3,6 +3,7 @@ package be.jensberckmoes.insightfx.service;
 import be.jensberckmoes.insightfx.model.ExportType;
 import be.jensberckmoes.insightfx.model.ExportableRow;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -31,13 +32,13 @@ public interface ExportService {
      * @param rows           The list of {@link ExportableRow} to export. Must not be null.
      * @param target         The target file path where the exported file will be written. Must not be null.
      * @param type           The type of export to perform ({@link ExportType}). Must not be null.
-     * @param chartImagePath Optional path to a chart image to include in the export (PDF only). Can be null.
+     * @param chartImage    Optional chart image to include in the export (PDF only). Can be null.
      * @throws IOException              If there is an error writing to the target file.
      * @throws IllegalArgumentException If the export type is null or unsupported.
      */
     void export(final List<? extends ExportableRow> rows,
                 final Path target,
                 final ExportType type,
-                final Path chartImagePath) throws IOException;
+                final BufferedImage chartImage) throws IOException;
 
 }

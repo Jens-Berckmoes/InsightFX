@@ -9,10 +9,12 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -51,7 +53,7 @@ public class ExportServiceImpl implements ExportService {
     public void export(final List<? extends ExportableRow> rows,
                        final Path targetFile,
                        final ExportType exportType,
-                       final Path chartImagePath) throws IOException {
+                       final BufferedImage chartImage) throws IOException {
         if (Objects.isNull(exportType)) {
             log.error("Export type is null for target file: {}", targetFile);
             throw new IllegalArgumentException("Unsupported export type");
@@ -61,7 +63,7 @@ public class ExportServiceImpl implements ExportService {
         try {
             switch (exportType) {
                 case CSV -> exportCsv(rows, targetFile, CsvDelimiter.COMMA);
-                case PDF -> exportPdf(rows, targetFile, chartImagePath);
+                case PDF -> exportPdf(rows, targetFile, chartImage);
                 case EUROPEAN_CSV -> exportCsv(rows, targetFile, CsvDelimiter.SEMICOLON);
                 default -> {
                     log.error("Unsupported export type: {}", exportType);
@@ -153,15 +155,15 @@ public class ExportServiceImpl implements ExportService {
      *
      * @param rows           data to write
      * @param targetFile     target PDF file path
-     * @param chartImagePath optional chart image path
+     * @param chartImage     optional chart image
      */
-    private void exportPdf(final List<? extends ExportableRow> rows, final Path targetFile, final Path chartImagePath) {
+    private void exportPdf(final List<? extends ExportableRow> rows, final Path targetFile, final BufferedImage chartImage) {
         final long start = System.currentTimeMillis();
         if (rows.isEmpty()) {
             log.warn("PDF export called with empty row list: {}", targetFile);
             return;
         }
-        log.debug("PDF export rows count: {}, chart included: {}", rows.size(), Objects.nonNull(chartImagePath));
+        log.debug("PDF export rows count: {}, chart included: {}", rows.size(), Objects.nonNull(chartImage));
 
         try (final PDDocument document = new PDDocument()) {
             final PDPage page = new PDPage();
@@ -171,7 +173,7 @@ public class ExportServiceImpl implements ExportService {
 
                 float yPos = 750;
                 yPos = writeTitleWithSpaceBelow(contentStream, yPos);
-                yPos = drawChartIfExists(document, contentStream, chartImagePath, yPos);
+                yPos = drawChartIfExists(document, contentStream, chartImage, yPos);
 
                 writeRows(rows, contentStream, yPos);
             }
@@ -208,18 +210,18 @@ public class ExportServiceImpl implements ExportService {
      *
      * @param document       the PDF document
      * @param contentStream  the content stream
-     * @param chartImagePath path to chart image
+     * @param chartImage     the chart image
      * @param yPos           current vertical position
      * @return new Y position after drawing chart
      * @throws IOException if drawing fails
      */
     private static float drawChartIfExists(final PDDocument document,
                                            final PDPageContentStream contentStream,
-                                           final Path chartImagePath,
+                                           final BufferedImage chartImage,
                                            final float yPos) throws IOException {
-        if (fileExists(chartImagePath)) {
-            log.debug("Including chart in PDF: {}", chartImagePath);
-            final PDImageXObject chart = PDImageXObject.createFromFile(chartImagePath.toString(), document);
+        if (Objects.nonNull(chartImage)) {
+            log.debug("Including chart in PDF");
+            final PDImageXObject chart = LosslessFactory.createFromImage(document, chartImage);
             final float scale = 0.4f;
             final float width = chart.getWidth() * scale;
             final float height = chart.getHeight() * scale;
@@ -227,16 +229,6 @@ public class ExportServiceImpl implements ExportService {
             return moveDown(yPos, height + 30);
         }
         return yPos;
-    }
-
-    /**
-     * Checks if a file exists at the given path.
-     *
-     * @param chartImagePath the path to check
-     * @return true if path exists, false otherwise
-     */
-    private static boolean fileExists(final Path chartImagePath) {
-        return Objects.nonNull(chartImagePath) && Files.exists(chartImagePath);
     }
 
     /**
