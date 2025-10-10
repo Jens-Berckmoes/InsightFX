@@ -77,13 +77,9 @@ public class AnalysisService {
         return new ArrayList<>(categoryMap.values());
     }
 
-    private static void addSummaryCategories(BigDecimal totalIncome, Map<String, CategorySummary> categoryMap, BigDecimal totalExpenses) {
-        if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
-            categoryMap.put("Total Income", new CategorySummary("Total Income", totalIncome));
-        }
-        if (totalExpenses.compareTo(BigDecimal.ZERO) < 0) {
-            categoryMap.put("Total Expenses", new CategorySummary("Total Expenses", totalExpenses));
-        }
+    private static void addSummaryCategories(final BigDecimal totalIncome, final Map<String, CategorySummary> categoryMap, final BigDecimal totalExpenses) {
+        categoryMap.put("Total Income", new CategorySummary("Total Income", totalIncome));
+        categoryMap.put("Total Expenses", new CategorySummary("Total Expenses", totalExpenses));
         categoryMap.put("Balance", new CategorySummary("Balance", totalIncome.add(totalExpenses)));
     }
 
