@@ -6,6 +6,7 @@ import be.jensberckmoes.insightfx.model.ExportableRow;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
@@ -220,12 +221,23 @@ public class ExportServiceImpl implements ExportService {
                                            final BufferedImage chartImage,
                                            final float yPos) throws IOException {
         if (Objects.nonNull(chartImage)) {
-            log.debug("Including chart in PDF");
+            log.debug("Including chart in PDF from in-memory image");
+
             final PDImageXObject chart = LosslessFactory.createFromImage(document, chartImage);
-            final float scale = 0.4f;
+            final PDRectangle pageSize = document.getPage(0).getMediaBox();
+
+            final float margin = 50;
+            final float maxWidth = pageSize.getWidth() - 2 * margin;
+            final float maxHeight = pageSize.getHeight() - 2 * margin;
+
+            final float xScale = maxWidth / chart.getWidth();
+            final float yScale = maxHeight / chart.getHeight();
+            final float scale = Math.min(Math.min(xScale, yScale), 0.4f);
+
             final float width = chart.getWidth() * scale;
             final float height = chart.getHeight() * scale;
-            contentStream.drawImage(chart, 50, yPos - height, width, height);
+
+            contentStream.drawImage(chart, margin, yPos - height, width, height);
             return moveDown(yPos, height + 30);
         }
         return yPos;
