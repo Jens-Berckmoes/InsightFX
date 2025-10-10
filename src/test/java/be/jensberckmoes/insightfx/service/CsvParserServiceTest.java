@@ -20,7 +20,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldParseValidCsvIntoRecords() {
+    public void testParsesValidCsvIntoRecords() {
         final InputStream csvStream = getClass().getResourceAsStream("/test-data.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -37,7 +37,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldReturnEmptyListForEmptyFile() {
+    public void testReturnsEmptyListForEmptyFile() {
         final InputStream csvStream = getClass().getResourceAsStream("/empty.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -47,7 +47,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldThrowRunTimeExceptionForMalformedDateCsv() {
+    public void testThrowsRunTimeExceptionForMalformedDateCsv() {
         final InputStream csvStream = getClass().getResourceAsStream("/malformed-date.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -55,7 +55,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldThrowRunTimeExceptionForMalformedAmountCsv() {
+    public void testThrowsRunTimeExceptionForMalformedAmountCsv() {
         final InputStream csvStream = getClass().getResourceAsStream("/malformed-amount.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -63,7 +63,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldThrowRunTimeExceptionForNullAmountCsv() {
+    public void testThrowsRunTimeExceptionForNullAmountCsv() {
         final InputStream csvStream = getClass().getResourceAsStream("/malformed-null-amount.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -71,7 +71,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldThrowRunTimeExceptionForEmptyDescriptionCsv() {
+    public void testThrowsRunTimeExceptionForEmptyDescriptionCsv() {
         final InputStream csvStream = getClass().getResourceAsStream("/malformed-empty-description.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -79,7 +79,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldThrowRunTimeExceptionForTooFewHeadersColumnsCsv() {
+    public void testThrowsRunTimeExceptionForTooFewHeadersColumnsCsv() {
         final InputStream csvStream = getClass().getResourceAsStream("/malformed-headers.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -87,7 +87,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldThrowRunTimeExceptionForZeroAmountCsv() {
+    public void testThrowsRunTimeExceptionForZeroAmountCsv() {
         final InputStream csvStream = getClass().getResourceAsStream("/malformed-amount-zero.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -95,7 +95,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldHandleQuotes() {
+    public void testHandlesQuotes() {
         final InputStream csvStream = getClass().getResourceAsStream("/quotes-test-data.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -110,7 +110,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldHandleMultipleLines() {
+    public void testHandlesMultipleLines() {
         final InputStream csvStream = getClass().getResourceAsStream("/multiple-lines.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -125,7 +125,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldTrimMultipleLines() {
+    public void testTrimsMultipleLines() {
         final InputStream csvStream = getClass().getResourceAsStream("/multiple-whitespace.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 
@@ -140,7 +140,7 @@ public class CsvParserServiceTest {
     }
 
     @Test
-    public void shouldWorkWithUtf8() {
+    public void testWorksWithUtf8() {
         final InputStream csvStream = getClass().getResourceAsStream("/utf8.csv");
         assertNotNull(csvStream, "Test CSV moet bestaan");
 

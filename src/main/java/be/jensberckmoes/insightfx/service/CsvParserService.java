@@ -18,6 +18,7 @@ import java.util.Objects;
 
 public class CsvParserService {
     private static final Logger log = LoggerFactory.getLogger(CsvParserService.class);
+
     /**
      * Service to parse CSV-files to DataRecord objects.
      *
@@ -45,14 +46,19 @@ public class CsvParserService {
                     .withIgnoreLeadingWhiteSpace(true)
                     .build();
             final List<DataRecord> records = new ArrayList<>();
-            for( final DataRecord record: csvToBean){
+            for (final DataRecord record : csvToBean) {
+                if (record.getDescription().contains("BEGUNSTIGDE: KREDBEBBXXX BERCKMOES J & DUMONT")
+                        || record.getDescription().contains("OPDRACHTGEVER: KREDBEBBXXX BERCKMOES")
+                || record.getDescription().contains("SALARIS")){
+                    continue;
+                }
                 log.debug("Parsed record: {}", record);
                 records.add(record);
             }
             log.debug("Amount of rows loaded: {}", records.size());
             return records;
         } catch (final Exception e) {
-            final Throwable rootCause = Objects.nonNull(e.getCause())? e.getCause() : e;
+            final Throwable rootCause = Objects.nonNull(e.getCause()) ? e.getCause() : e;
             log.error("CSV parsing failure: {}", rootCause.getMessage(), e);
             throw new CsvParsingException("Error parsing: " + rootCause.getMessage(), e);
         }

@@ -1,5 +1,8 @@
 package be.jensberckmoes.insightfx.model;
 
+import be.jensberckmoes.insightfx.converter.BigDecimalConverter;
+import be.jensberckmoes.insightfx.converter.LocalDateConverter;
+import be.jensberckmoes.insightfx.converter.RequiredTrimmedStringConverter;
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvCustomBindByName;
 import lombok.AllArgsConstructor;

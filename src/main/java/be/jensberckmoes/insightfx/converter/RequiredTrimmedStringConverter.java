@@ -1,4 +1,4 @@
-package be.jensberckmoes.insightfx.model;
+package be.jensberckmoes.insightfx.converter;
 
 import be.jensberckmoes.insightfx.exception.CsvParsingException;
 import com.opencsv.bean.AbstractBeanField;

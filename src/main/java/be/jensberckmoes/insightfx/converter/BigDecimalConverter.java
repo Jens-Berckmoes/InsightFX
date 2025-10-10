@@ -1,4 +1,4 @@
-package be.jensberckmoes.insightfx.model;
+package be.jensberckmoes.insightfx.converter;
 import java.math.BigDecimal;
 import java.util.Objects;
 
